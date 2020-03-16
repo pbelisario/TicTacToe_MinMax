@@ -19,14 +19,29 @@ def evaluate(state):
         @{return} 1 if computer wins, -1 if human wins. 0 if draw
     '''
     if wins(state, COMPUTER):
+        # if the computer wins with the current board state
+        # the score is 1
         score = +1
     elif wins(state, HUMAN):
+        # if the human wins with the current board state
+        # the score is -1
         score = -1
     else:
+        # if no one wins with the current board state
+        # the score is 0
         score = 0
     return score
 
+
 def wins(state, player):
+    '''
+        Given the board state, checks if the player won the game
+        @{param} state: current board state
+        @{param} player: which player is
+        @{return} True (has the victory) or False (Does not have the victory yet) 
+    
+    '''
+    # How should be the board state to have an winner
     win_state =[
         [state[0][0], state[0][1], state[0][2]], # Win row 1
         [state[1][0], state[1][1], state[1][2]], # Win row 2
@@ -43,9 +58,17 @@ def wins(state, player):
         return False
 
 def you_lost(state):
+    '''
+        Checks if the game is over
+        @{param} state: current board state
+        @{return} True if either the player or computer won the game, False otherwise
+    '''
     return wins(state, HUMAN) or wins(state, COMPUTER)
 
 def empty_cells(state):
+    '''
+        return a list of empty cells within the current board state
+    '''
     cells =[]
     for x, row in enumerate(state):
         for y, cell in enumerate(row):
@@ -53,13 +76,20 @@ def empty_cells(state):
                 cells.append([x,y])
     return cells
 
+
 def is_valid(x,y):
+    '''
+        Given an coordinate checks if the movement if valid or not
+    '''
     if [x,y] in empty_cells(board):
         return True
     else:
         return False
 
 def set_move(x,y, player):
+    '''
+        Set the board coordinate as choosen by the player
+    '''
     if is_valid(x,y):
         board[x][y] = player
         return True
@@ -67,27 +97,56 @@ def set_move(x,y, player):
         return False
 
 def minmax(state, depth, player):
+    '''
+        @{param} state: current board State
+        @{param} depth: how many empty cells currently exists
+        @{param} player: who is playing with minmax
+        @{return} vector [X, Y, position Score]
+    '''
+    # if the player is the computer
+    # the best position is at
+    # X, Y -1, -1 with score -Infity
     if player == COMPUTER:
         best = [-1, -1, -inf]
     else:
         best = [-1, -1, +inf]
     
+    # if there isn't an empty space or the game is over
+    # return positions -1, -1 and evaluated score
+    # only the evaluation will be used in this case
+    # Guarantee the recursion ends
     if depth == 0 or you_lost(state):
         score = evaluate(state)
         return [-1, -1, score]
     
+    # Recursively open the board empty cells tree
     for cell in empty_cells(state):
+        
+        # select the first empty cell available
         x, y = cell[0], cell[1]
+        
+        # temporary set the current player
+        # at the selected cell
         state[x][y] = player
+
+        # do the Minmax again, 
+        # with the new temporary board, and the other player
         score = minmax(state, depth - 1, -player)
+        
+        # set the state as unused again
         state[x][y] = 0
+
+        # update the score postions' to the correct one
+        # it is up to this point -1, -1
         score[0], score[1] = x, y
         
         if player == COMPUTER:
+            # if the player is the computer do the max strategy
             if score[2] > best[2]:
                 best = score # Max value
         else:
             if score[2] < best[2]:
+                # if the player other player do the min strategy
                 best = score # Min value
     return best
 
@@ -95,15 +154,16 @@ def clean():
     system('clear')
 
 def render(state, computer_choice, human_choice):
+    '''
+        print current board State
+    '''
     chars = {
         -1: human_choice,
          1: computer_choice,
-         0: ' '
+         0: ' ' 
     }
 
     line = '--------------------------------'
-
-    print('\n' + line)
 
     for row in state:
         for cell in row:
@@ -112,7 +172,12 @@ def render(state, computer_choice, human_choice):
         print('\n'+line)
 
 def computer_turn(computer_choice, human_choice):
+    
+    # how many empty cells exists in the board
     depth = len(empty_cells(board))
+    
+    # if there is no empty cells or someone won the game
+    # the computer does not take his turn
     if depth == 0 or you_lost(board):
         return
     
@@ -120,10 +185,14 @@ def computer_turn(computer_choice, human_choice):
     print(f'Computer turn [{computer_choice}]')
     render(board, computer_choice, human_choice)
 
+    # if the board is empty
+    # start placing the maker at an random position
     if depth == 9:
         x = choice([0,1,2])
         y = choice([0,1,2])
     else:
+        # otherwise do the minmax algorithm
+        # and place the marker at X Y board coordinate
         move = minmax(board, depth, COMPUTER)
         x, y = move[0], move[1]
     
@@ -131,7 +200,12 @@ def computer_turn(computer_choice, human_choice):
     time.sleep(1)
 
 def human_turn(computer_choice, human_choice):
+    
+    # how many empty cells exists in the board
     depth = len(empty_cells(board))
+    
+    # if there is no empty cells or someone won the game
+    # the computer does not take his turn
     if depth == 0 or you_lost(board):
         return
 
@@ -149,6 +223,7 @@ def human_turn(computer_choice, human_choice):
 
     while move < 1 or move > 9:
         try:
+            # Set the players choice
             move = int(input('Digite de 1 ate 9: '))
             position = moves[move]
             movable = set_move(position[0], position[1], HUMAN)
@@ -197,6 +272,7 @@ def main():
         except (KeyError, ValueError):
             print('You should know how to read instructions by now')
     
+    # Game loop
     while len(empty_cells(board)) > 0 and not you_lost(board):
         if first == 'N':
             computer_turn(computer_choice, human_choice)
